@@ -1,0 +1,1468 @@
+<!DOCTYPE html>
+<html lang="ru" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Study Prompt Architect — Генератор учебных промптов</title>
+  <style>
+    /* ==========================================================================
+       1. DESIGN TOKENS & VARIABLES (Modern EdTech Aesthetic)
+       ========================================================================== */
+    :root {
+      --bg-page: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-subtle: #f1f5f9;
+      --bg-preview: #0f172a;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+      --text-preview: #f8fafc;
+      --accent-primary: #4f46e5;
+      --accent-primary-hover: #4338ca;
+      --accent-soft: #eef2ff;
+      --accent-border: #c7d2fe;
+      --success: #10b981;
+      --success-hover: #059669;
+      --border-color: #e2e8f0;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+      --shadow-lg: 0 10px 25px -5px rgba(15, 23, 42, 0.1), 0 8px 10px -6px rgba(15, 23, 42, 0.05);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
+    /* ==========================================================================
+       2. RESET & BASE STYLES
+       ========================================================================== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-page);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding-bottom: 3rem;
+    }
+
+    /* RTL Support refinements */
+    [dir="rtl"] body {
+      font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    }
+
+    /* ==========================================================================
+       3. LAYOUT & HEADER
+       ========================================================================== */
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    header.app-header {
+      background-color: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+      flex-shrink: 0;
+    }
+
+    .brand-text h1 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+
+    .brand-text p {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    /* Language Switcher Pill Bar */
+    .lang-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background-color: var(--bg-subtle);
+      padding: 0.3rem;
+      border-radius: 999px;
+      border: 1px solid var(--border-color);
+    }
+
+    .lang-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      padding: 0.45rem 0.9rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .lang-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .lang-btn.active {
+      background-color: var(--bg-card);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ==========================================================================
+       4. MAIN GRID (Builder Controls + Sticky Live Output)
+       ========================================================================== */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.75rem;
+      margin-top: 1.75rem;
+      align-items: start;
+    }
+
+    @media (min-width: 960px) {
+      .main-grid {
+        grid-template-columns: 1.35fr 1fr;
+      }
+    }
+
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .card + .card {
+      margin-top: 1.25rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 1.15rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background-color: var(--accent-soft);
+      color: var(--accent-primary);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    /* ==========================================================================
+       5. FORM CONTROLS & INTERACTIVE CHIPS
+       ========================================================================== */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1rem;
+      margin-bottom: 1.15rem;
+    }
+
+    @media (min-width: 600px) {
+      .form-row.two-cols {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label.field-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field-hint {
+      font-size: 0.78rem;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    select, input[type="text"] {
+      width: 100%;
+      padding: 0.68rem 0.9rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--text-primary);
+      background-color: var(--bg-subtle);
+      border: 1.5px solid transparent;
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+      outline: none;
+    }
+
+    select:hover, input[type="text"]:hover {
+      background-color: #e2e8f080;
+    }
+
+    select:focus, input[type="text"]:focus {
+      background-color: var(--bg-card);
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.14);
+    }
+
+    /* Radio / Format Cards Grid */
+    .option-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+    }
+
+    @media (min-width: 560px) {
+      .option-cards.grid-2 {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .choice-card {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      padding: 0.8rem 0.95rem;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-color);
+      background-color: var(--bg-card);
+      cursor: pointer;
+      transition: var(--transition);
+      user-select: none;
+    }
+
+    .choice-card:hover {
+      border-color: var(--accent-border);
+      background-color: #fafaff;
+    }
+
+    .choice-card input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .choice-card.selected {
+      border-color: var(--accent-primary);
+      background-color: var(--accent-soft);
+      box-shadow: 0 2px 8px rgba(79, 70, 229, 0.08);
+    }
+
+    .choice-icon {
+      font-size: 1.25rem;
+      line-height: 1.2;
+      flex-shrink: 0;
+    }
+
+    .choice-content {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .choice-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .choice-desc {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+
+    /* Checkbox Pill Toggles */
+    .checkbox-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.55rem;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 0.85rem;
+      border-radius: var(--radius-md);
+      background-color: var(--bg-subtle);
+      border: 1.5px solid transparent;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .check-item:hover {
+      background-color: #e2e8f099;
+    }
+
+    .check-item.checked {
+      background-color: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent-primary-hover);
+    }
+
+    .check-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent-primary);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ==========================================================================
+       6. OUTPUT PANEL (Right Column / Bottom on Mobile)
+       ========================================================================== */
+    .output-sticky {
+      position: sticky;
+      top: 5.5rem;
+    }
+
+    .output-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .output-top-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .output-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .prompt-lang-selector {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .prompt-lang-selector select {
+      width: auto;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.82rem;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+    }
+
+    .prompt-box-wrapper {
+      position: relative;
+      background-color: var(--bg-preview);
+      border-radius: var(--radius-md);
+      padding: 1.15rem;
+      border: 1px solid #1e293b;
+    }
+
+    .prompt-textarea {
+      width: 100%;
+      min-height: 340px;
+      background: transparent;
+      border: none;
+      color: var(--text-preview);
+      font-family: var(--font-sans);
+      font-size: 0.92rem;
+      line-height: 1.65;
+      resize: vertical;
+      outline: none;
+    }
+
+    .prompt-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.65rem;
+      padding-top: 0.65rem;
+      border-top: 1px solid #1e293b;
+      font-size: 0.78rem;
+      color: #94a3b8;
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.65rem;
+      margin-top: 1rem;
+    }
+
+    @media (min-width: 480px) {
+      .action-buttons {
+        grid-template-columns: 2fr 1fr 1fr;
+      }
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      padding: 0.75rem 1rem;
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: center;
+    }
+
+    .btn-primary {
+      background-color: var(--accent-primary);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+    }
+
+    .btn-primary:hover {
+      background-color: var(--accent-primary-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary.copied {
+      background-color: var(--success);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background-color: var(--bg-subtle);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background-color: #e2e8f0;
+    }
+
+    .tip-banner {
+      margin-top: 1rem;
+      padding: 0.8rem 1rem;
+      border-radius: var(--radius-md);
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      line-height: 1.45;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ========================================================================
+       HEADER & LANGUAGE SWITCHER
+       ======================================================================== -->
+  <header class="app-header">
+    <div class="container header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true">🎓</div>
+        <div class="brand-text">
+          <h1 id="ui-app-title">AI Study Prompt Architect</h1>
+          <p id="ui-app-subtitle">Конструктор идеальных промптов для обучения с нейросетью</p>
+        </div>
+      </div>
+
+      <nav class="lang-bar" aria-label="Interface Language">
+        <button type="button" class="lang-btn active" data-lang="ru" onclick="setUILanguage('ru')">
+          <span>🇷🇺</span> Русский
+        </button>
+        <button type="button" class="lang-btn" data-lang="en" onclick="setUILanguage('en')">
+          <span>🇬🇧</span> English
+        </button>
+        <button type="button" class="lang-btn" data-lang="he" onclick="setUILanguage('he')">
+          <span>🇮🇱</span> עברית
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ========================================================================
+       MAIN CONTENT GRID
+       ======================================================================== -->
+  <main class="container main-grid">
+    
+    <!-- LEFT COLUMN: CONFIGURATION CONTROLS -->
+    <div class="builder-column">
+      
+      <!-- CARD 1: Learner Profile & Subject -->
+      <section class="card">
+        <div class="section-header">
+          <span class="section-badge">1</span>
+          <h2 class="section-title" id="ui-sec-1">Профиль учащегося и предмет</h2>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="field-label" for="role-select" id="ui-lbl-role">Кто будет учиться?</label>
+            <select id="role-select" onchange="handleRoleChange()"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="grade-select" id="ui-lbl-grade">Класс / Курс обучения</label>
+            <select id="grade-select" onchange="generatePrompt()"></select>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="field-label" for="subject-select" id="ui-lbl-subject">Учебная дисциплина</label>
+            <select id="subject-select" onchange="generatePrompt()"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="topic-input">
+              <span id="ui-lbl-topic">Конкретная тема</span>
+              <span class="field-hint" id="ui-hint-topic">необязательно</span>
+            </label>
+            <input type="text" id="topic-input" oninput="generatePrompt()" placeholder="Например: Квадратные уравнения" />
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD 2: Knowledge Level & Learning Goal -->
+      <section class="card">
+        <div class="section-header">
+          <span class="section-badge">2</span>
+          <h2 class="section-title" id="ui-sec-2">Уровень знаний и цель обучения</h2>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="field-label" for="knowledge-select" id="ui-lbl-knowledge">Текущий уровень знаний</label>
+            <select id="knowledge-select" onchange="generatePrompt()"></select>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" for="goal-select" id="ui-lbl-goal">Цель и глубина подготовки</label>
+            <select id="goal-select" onchange="generatePrompt()"></select>
+          </div>
+        </div>
+      </section>
+
+      <!-- CARD 3: Delivery Format (Text, Audio, Video, Interactive) -->
+      <section class="card">
+        <div class="section-header">
+          <span class="section-badge">3</span>
+          <h2 class="section-title" id="ui-sec-3">Формат подачи информации</h2>
+        </div>
+        <div class="option-cards grid-2" id="format-cards-container"></div>
+      </section>
+
+      <!-- CARD 4: Pro Prompt Engineering Enhancements -->
+      <section class="card">
+        <div class="section-header">
+          <span class="section-badge">4</span>
+          <h2 class="section-title" id="ui-sec-4">Усилители качества ответа AI</h2>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="field-label" for="tone-select" id="ui-lbl-tone">Стиль и тон репетитора</label>
+            <select id="tone-select" onchange="generatePrompt()"></select>
+          </div>
+        </div>
+
+        <div class="form-row two-cols">
+          <div class="form-group">
+            <label class="field-label" id="ui-lbl-practice">Практика и закрепление</label>
+            <div class="checkbox-list" id="practice-checks-container"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="field-label" id="ui-lbl-constraints">Особые правила объяснения</label>
+            <div class="checkbox-list" id="constraint-checks-container"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- RIGHT COLUMN: LIVE GENERATED PROMPT -->
+    <aside class="output-sticky">
+      <div class="output-card">
+        <div class="output-top-bar">
+          <h2 class="output-title">
+            <span>✨</span>
+            <span id="ui-out-title">Готовый промпт для AI</span>
+          </h2>
+
+          <div class="prompt-lang-selector">
+            <label for="prompt-lang-select" id="ui-lbl-prompt-lang">Язык промпта:</label>
+            <select id="prompt-lang-select" onchange="generatePrompt()">
+              <option value="auto" id="opt-lang-auto">Как интерфейс</option>
+              <option value="ru">Русский</option>
+              <option value="en">English</option>
+              <option value="he">עברית</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="prompt-box-wrapper">
+          <textarea
+            id="prompt-output"
+            class="prompt-textarea"
+            spellcheck="false"
+            oninput="updateCharCount()"
+            aria-label="Generated AI Prompt"
+          ></textarea>
+          <div class="prompt-meta">
+            <span id="ui-editable-hint">✏️ Можно редактировать вручную</span>
+            <span id="char-counter">0 chars</span>
+          </div>
+        </div>
+
+        <div class="action-buttons">
+          <button type="button" class="btn btn-primary" id="copy-btn" onclick="copyPrompt()">
+            <span>📋</span>
+            <span id="ui-btn-copy">Скопировать промпт</span>
+          </button>
+
+          <button type="button" class="btn btn-secondary" onclick="applyRandomExample()">
+            <span>🎲</span>
+            <span id="ui-btn-random">Пример</span>
+          </button>
+
+          <button type="button" class="btn btn-secondary" onclick="resetForm()">
+            <span>↺</span>
+            <span id="ui-btn-reset">Сброс</span>
+          </button>
+        </div>
+
+        <div class="tip-banner">
+          <span>💡</span>
+          <span id="ui-tip-text">Совет: вставьте этот промпт в ChatGPT, Claude или Gemini. Если выбрано «Аудио-формат», включите голосовой режим AI для лучшего эффекта!</span>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <script>
+    /* ==========================================================================
+       1. TRILINGUAL DICTIONARY & PROMPT TEMPLATES (RU, EN, HE)
+       ========================================================================== */
+    const I18N = {
+      ru: {
+        dir: "ltr",
+        appTitle: "AI Study Prompt Architect",
+        appSubtitle: "Конструктор профессиональных промптов для учёбы с нейросетью",
+        sec1: "Профиль учащегося и предмет",
+        lblRole: "Кто будет учиться?",
+        lblGrade: "Класс / Уровень обучения",
+        lblSubject: "Учебная дисциплина",
+        lblTopic: "Конкретная тема",
+        hintTopic: "необязательно",
+        topicPlaceholder: "Напр.: Квадратные уравнения, Законы Ньютона...",
+        sec2: "Уровень знаний и цель обучения",
+        lblKnowledge: "Текущий уровень знаний",
+        lblGoal: "Цель и глубина подготовки",
+        sec3: "Формат подачи информации",
+        sec4: "Усилители качества ответа AI",
+        lblTone: "Стиль и тон объяснения",
+        lblPractice: "Практика и проверка",
+        lblConstraints: "Особые правила для AI",
+        outTitle: "Готовый промпт для AI",
+        lblPromptLang: "Язык промпта:",
+        optLangAuto: "Как интерфейс",
+        editableHint: "✏️ Можно отредактировать вручную",
+        btnCopy: "Скопировать промпт",
+        btnCopied: "Скопировано!",
+        btnRandom: "Пример",
+        btnReset: "Сброс",
+        tipText: "Совет: вставьте этот текст в ChatGPT, Gemini или Claude. При выборе «Аудио-формата» удобно включить голосовой режим нейросети!",
+        charsLabel: "симв.",
+
+        roles: {
+          school: "Школьник",
+          university: "Студент вуза / колледжа",
+          self: "Самообразование / Взрослый"
+        },
+        grades: {
+          g1_4: "1–4 классы (Начальная школа)",
+          g5_7: "5–7 классы (Средняя школа)",
+          g8_9: "8–9 классы (Подготовка к ОГЭ / основа)",
+          g10: "10 класс (Старшая школа)",
+          g11_12: "11–12 классы (ЕГЭ / Багрут / Выпускной)",
+          uni_1_2: "1–2 курс университета (Бакалавриат)",
+          uni_adv: "Старшие курсы / Магистратура",
+          general: "Без привязки к классу (общий уровень)"
+        },
+        subjects: {
+          math: "Математика (Алгебра / Геометрия)",
+          physics: "Физика",
+          chemistry: "Химия",
+          biology: "Биология",
+          cs: "Информатика и программирование",
+          history: "История",
+          literature: "Литература",
+          languages: "Иностранные языки",
+          economics: "Экономика и обществознание",
+          other: "Другая дисциплина (по теме)"
+        },
+        knowledge: {
+          zero: "С полного нуля (новичок, тема незнакома)",
+          gaps: "Базовый (есть пробелы и путаница)",
+          confident: "Средний / Уверенный (знаю базу, хочу глубже)",
+          advanced: "Продвинутый / Олимпиадный уровень"
+        },
+        goals: {
+          understand: "Понять новую тему простыми словами",
+          homework: "Разобраться с домашним заданием (без простого списывания)",
+          exam: "Подготовка к контрольной / экзамену / Багруту",
+          mastery: "Глубокое академическое понимание теории и связей"
+        },
+        formats: [
+          {
+            id: "text",
+            icon: "📄",
+            title: "Структурированный текст",
+            desc: "Чёткие блоки, списки, формулы и наглядные примеры"
+          },
+          {
+            id: "audio",
+            icon: "🎧",
+            title: "Аудио / Подкаст-стиль",
+            desc: "Живой разговорный рассказ, идеальный для прослушивания (TTS)"
+          },
+          {
+            id: "video",
+            icon: "🎬",
+            title: "Сценарий видео / Визуал",
+            desc: "Яркие визуальные образы, схемы в тексте и раскадровка"
+          },
+          {
+            id: "interactive",
+            icon: "💬",
+            title: "Интерактивный репетитор",
+            desc: "Объясняет маленькими шагами и задаёт встречные вопросы"
+          }
+        ],
+        tones: {
+          friendly: "Дружелюбный и поддерживающий наставник",
+          academic: "Строгий, точный и академический",
+          metaphor: "С юмором, метафорами и примерами из жизни",
+          socratic: "Сократовский метод (ведёт к ответу наводящими вопросами)"
+        },
+        practices: [
+          { id: "tasks", label: "3 тренировочные задачи со скрытыми решениями" },
+          { id: "quiz", label: "Мини-тест из 5 вопросов в конце" },
+          { id: "cheatsheet", label: "Компактная шпаргалка / таблица формул и правил" }
+        ],
+        constraints: [
+          { id: "no_jargon", label: "Без сложного жаргона (объяснять термины сразу)" },
+          { id: "step_by_step", label: "Не пропускать промежуточные шаги логики и вычислений" },
+          { id: "real_world", label: "Показать, где это применяется в реальной жизни" }
+        ],
+
+        // Prompt Generation Templates in Russian
+        promptBuilder: {
+          roleIntro: (role, grade, subject) =>
+            `Выступи в роли опытного, терпеливого и высококвалифицированного персонального преподавателя по дисциплине «${subject}». Твой ученик — ${role} (${grade}).`,
+          topicLine: (topic) =>
+            topic ? `Фокус занятия — конкретная тема: «${topic}».` : `Выбери ключевую базовую тему этой дисциплины, подходящую под уровень ученика, и проведи по ней занятие.`,
+          levelAndGoal: (knowledge, goal) =>
+            `\nПРОФИЛЬ УЧЕНИКА И ЦЕЛЬ:\n• Текущий уровень знаний: ${knowledge}.\n• Главная цель занятия: ${goal}.`,
+          formatInstructions: {
+            text: `\nФОРМАТ ПОДАЧИ (СТРУКТУРИРОВАННЫЙ ТЕКСТ):\n• Оформи ответ в виде чёткого, логичного конспекта с заголовками и маркированными списками.\n• Выделяй ключевые определения и правила.\n• Приведи 2–3 наглядных разобранных примера от простого к сложному.`,
+            audio: `\nФОРМАТ ПОДАЧИ (АУДИО / ПОДКАСТ ДЛЯ ВОСПРИЯТИЯ НА СЛУХ):\n• Напиши объяснение так, будто ты записываешь увлекательный образовательный подкаст или объясняешь тему голосом.\n• НЕ используй сложные таблицы, громоздкие символы или визуальные ссылки («как видно выше»).\n• Используй естественные речевые переходы, ритм, паузы и проговаривай формулы словами, чтобы текст идеально воспринимался на слух или через озвучку (TTS).`,
+            video: `\nФОРМАТ ПОДАЧИ (ВИДЕО-СЦЕНАРИЙ И ВИЗУАЛЬНЫЕ ОБРАЗЫ):\n• Построй объяснение как сценарий наглядного обучающего видео (в духе Khan Academy или Kurzgesagt).\n• Описывай визуальные сцены и мысленные картинки [в квадратных скобках], рисуй понятные текстовые схемы и диаграммы.\n• Используй яркие зрительные аналогии, чтобы ученик мог буквально «увидеть», как работает тема.`,
+            interactive: `\nФОРМАТ ПОДАЧИ (ПОШАГОВЫЙ ИНТЕРАКТИВНЫЙ РЕПЕТИТОР):\n• НЕ выдавай всю лекцию сразу!\n• Разбей тему на короткие логические шаги. Объясни только Шаг 1 (максимум 2–3 абзаца), а затем задай мне один проверочный вопрос или мини-задачу.\n• Дождись моего ответа, разбери его и только после этого переходи к следующему шагу.`
+          },
+          toneInstruction: (tone) => `\nСТИЛЬ ОБЩЕНИЯ:\n• Придерживайся следующего стиля: ${tone}.`,
+          practiceHeader: `\nПРАКТИКА И ЗАКРЕПЛЕНИЕ:`,
+          practiceMap: {
+            tasks: `• В конце объяснения предложи 3 практические задачи возрастающей сложности. Спрячь решения под спойлер или отдели их строкой «--- РЕШЕНИЯ ---», чтобы я мог сначала попробовать решить сам.`,
+            quiz: `• Добавь в конце короткий тест самопроверки из 5 вопросов с вариантами ответа (правильные ответы укажи в самом конце с кратким пояснением).`,
+            cheatsheet: `• Составь компактную «Шпаргалку» (ключевые правила, формулы, частые ошибки и как их избежать).`
+          },
+          constraintsHeader: `\nОБЯЗАТЕЛЬНЫЕ ПРАВИЛА:`,
+          constraintsMap: {
+            no_jargon: `• Избегай перегруженного академического жаргона. Если вводишь новый научный термин — сразу переводи его на простой человеческий язык.`,
+            step_by_step: `• Объясняй максимально подробно и пошагово: никогда не пропускай промежуточные логические выводы или алгебраические преобразования.`,
+            real_world: `• Обязательно приведи 1–2 конкретных примера того, как эти знания применяются в реальной жизни, технологиях или природе.`
+          },
+          closing: `\nНачни занятие прямо сейчас.`
+        }
+      },
+
+      en: {
+        dir: "ltr",
+        appTitle: "AI Study Prompt Architect",
+        appSubtitle: "Build high-precision educational AI prompts tailored to any learner",
+        sec1: "Learner Profile & Subject",
+        lblRole: "Learner Role",
+        lblGrade: "Grade / Academic Level",
+        lblSubject: "Subject / Discipline",
+        lblTopic: "Specific Topic",
+        hintTopic: "optional",
+        topicPlaceholder: "e.g., Quadratic Equations, Newton's Laws...",
+        sec2: "Knowledge Level & Learning Goal",
+        lblKnowledge: "Current Knowledge Level",
+        lblGoal: "Learning Goal / Preparation",
+        sec3: "Preferred Information Format",
+        sec4: "Smart Prompt Enhancements",
+        lblTone: "Tutor Tone & Teaching Style",
+        lblPractice: "Practice & Verification",
+        lblConstraints: "Special Explanation Rules",
+        outTitle: "Generated AI Prompt",
+        lblPromptLang: "Prompt language:",
+        optLangAuto: "Match UI",
+        editableHint: "✏️ Editable directly",
+        btnCopy: "Copy Prompt",
+        btnCopied: "Copied!",
+        btnRandom: "Example",
+        btnReset: "Reset",
+        tipText: "Tip: Paste this prompt into ChatGPT, Gemini, or Claude. If you selected 'Audio / Podcast style', try using the AI's voice mode for a real spoken lesson!",
+        charsLabel: "chars",
+
+        roles: {
+          school: "School Student",
+          university: "University / College Student",
+          self: "Self-Learner / Adult"
+        },
+        grades: {
+          g1_4: "Grades 1–4 (Elementary School)",
+          g5_7: "Grades 5–7 (Middle School)",
+          g8_9: "Grades 8–9 (Lower High School)",
+          g10: "Grade 10 (High School)",
+          g11_12: "Grades 11–12 (AP / IB / Bagrut / Finals)",
+          uni_1_2: "University 1st–2nd Year (Undergraduate)",
+          uni_adv: "University Advanced / Graduate Level",
+          general: "General / Non-grade specific"
+        },
+        subjects: {
+          math: "Mathematics (Algebra / Geometry / Calculus)",
+          physics: "Physics",
+          chemistry: "Chemistry",
+          biology: "Biology",
+          cs: "Computer Science & Programming",
+          history: "History",
+          literature: "Literature",
+          languages: "Foreign Languages",
+          economics: "Economics & Social Studies",
+          other: "Custom Subject (based on topic)"
+        },
+        knowledge: {
+          zero: "Complete Beginner / From Scratch",
+          gaps: "Basic (have some gaps and confusion)",
+          confident: "Intermediate / Confident (know basics, want deeper insight)",
+          advanced: "Advanced / Olympiad Level"
+        },
+        goals: {
+          understand: "Understand a new topic in simple, intuitive terms",
+          homework: "Get homework guidance without just being handed the answers",
+          exam: "Prepare for an upcoming exam, test, or standardized finals",
+          mastery: "Achieve deep theoretical mastery and conceptual connections"
+        },
+        formats: [
+          {
+            id: "text",
+            icon: "📄",
+            title: "Structured Text & Examples",
+            desc: "Clean sections, bullet points, formulas, and worked examples"
+          },
+          {
+            id: "audio",
+            icon: "🎧",
+            title: "Audio / Podcast Style",
+            desc: "Conversational spoken narrative optimized for listening / TTS"
+          },
+          {
+            id: "video",
+            icon: "🎬",
+            title: "Video Script / Visual Storyboard",
+            desc: "Vivid visual analogies, ASCII diagrams, and scene descriptions"
+          },
+          {
+            id: "interactive",
+            icon: "💬",
+            title: "Step-by-Step Interactive Tutor",
+            desc: "Teaches in small chunks and checks understanding with questions"
+          }
+        ],
+        tones: {
+          friendly: "Friendly, encouraging, and patient mentor",
+          academic: "Rigorous, precise, and academic",
+          metaphor: "Humorous, engaging, using everyday metaphors",
+          socratic: "Socratic method (guiding via thought-provoking questions)"
+        },
+        practices: [
+          { id: "tasks", label: "Include 3 practice problems with hidden step-by-step solutions" },
+          { id: "quiz", label: "Add a quick 5-question self-check quiz at the end" },
+          { id: "cheatsheet", label: "Create a compact cheat-sheet / summary table" }
+        ],
+        constraints: [
+          { id: "no_jargon", label: "Avoid complex jargon (define every new term simply)" },
+          { id: "step_by_step", label: "Explain step-by-step without skipping algebra or logic" },
+          { id: "real_world", label: "Connect concepts to real-world applications" }
+        ],
+
+        promptBuilder: {
+          roleIntro: (role, grade, subject) =>
+            `Act as an expert, patient, and highly skilled personal tutor specializing in ${subject}. Your student is a ${role} (${grade}).`,
+          topicLine: (topic) =>
+            topic ? `The specific focus of today's lesson is: "${topic}".` : `Select a foundational core topic in this subject appropriate for the student's level and teach a structured lesson on it.`,
+          levelAndGoal: (knowledge, goal) =>
+            `\nLEARNER PROFILE & OBJECTIVE:\n• Current Knowledge Level: ${knowledge}.\n• Primary Learning Goal: ${goal}.`,
+          formatInstructions: {
+            text: `\nDELIVERY FORMAT (STRUCTURED TEXT):\n• Format the explanation as a clean, well-organized study guide with clear headings and bullet points.\n• Highlight key definitions, rules, and takeaways.\n• Walk through 2–3 clear examples progressing from simple to more challenging.`,
+            audio: `\nDELIVERY FORMAT (AUDIO / PODCAST STYLE):\n• Write the entire explanation as an engaging, natural spoken podcast script meant to be heard rather than read.\n• DO NOT use markdown tables, complex ASCII art, or visual references like "as shown below".\n• Use natural conversational transitions, rhythm, and spell out equations clearly in words so it sounds seamless when read aloud or via Text-to-Speech (TTS).`,
+            video: `\nDELIVERY FORMAT (VIDEO SCRIPT & VISUAL STORYBOARD):\n• Structure the lesson like a script for a top-tier visual educational video (e.g., 3Blue1Brown, Kurzgesagt, or Khan Academy).\n• Describe visual scenes and mental models [inside square brackets], and draw clean text-based diagrams.\n• Use vivid visual analogies so the student can mentally "see" how the concept works.`,
+            interactive: `\nDELIVERY FORMAT (STEP-BY-STEP INTERACTIVE TUTOR):\n• DO NOT dump the entire lecture at once!\n• Break the topic into small, bite-sized steps. Explain ONLY Step 1 (2–3 short paragraphs max), then ask me one quick check-in question or mini-problem.\n• Wait for my response, give feedback, and only then move on to Step 2.`
+          },
+          toneInstruction: (tone) => `\nTEACHING TONE & STYLE:\n• Adopt the following persona and tone: ${tone}.`,
+          practiceHeader: `\nPRACTICE & REINFORCEMENT:`,
+          practiceMap: {
+            tasks: `• At the end of the explanation, provide 3 practice problems of increasing difficulty. Hide the step-by-step solutions below a clear "--- SOLUTIONS ---" divider so I can try solving them first.`,
+            quiz: `• Include a quick 5-question multiple-choice self-check quiz at the end, with the answer key and brief explanations listed below it.`,
+            cheatsheet: `• Provide a compact "Cheat Sheet" summarizing core rules, formulas, and common pitfalls to avoid.`
+          },
+          constraintsHeader: `\nSTRICT CONSTRAINTS:`,
+          constraintsMap: {
+            no_jargon: `• Avoid dense academic jargon. Whenever you introduce a technical term, immediately translate it into plain, everyday language.`,
+            step_by_step: `• Be thorough and explicit: never skip intermediate logical deductions or algebraic steps.`,
+            real_world: `• Include 1–2 concrete examples showing how this concept is used in real life, technology, or nature.`
+          },
+          closing: `\nBegin the lesson now.`
+        }
+      },
+
+      he: {
+        dir: "rtl",
+        appTitle: "AI Study Prompt Architect",
+        appSubtitle: "מחולל פרומפטים חכמים ללמידה מותאמת אישית עם בינה מלאכותית",
+        sec1: "פרופיל הלומד ותחום הלימוד",
+        lblRole: "מי הלומד/ת?",
+        lblGrade: "כיתה / רמת לימודים",
+        lblSubject: "מקצוע / תחום דעת",
+        lblTopic: "נושא ספציפי",
+        hintTopic: "לא חובה",
+        topicPlaceholder: "לדוגמה: משוואות ריבועיות, חוקי ניוטון...",
+        sec2: "רמת ידע נוכחית ומטרת הלמידה",
+        lblKnowledge: "רמת הידע הנוכחית",
+        lblGoal: "מטרת השיעור ורמת ההכנה",
+        sec3: "פורמט העברת המידע",
+        sec4: "שדרוגים לפרומפט איכותי",
+        lblTone: "סגנון וטון המורה",
+        lblPractice: "תרגול ובדיקת הבנה",
+        lblConstraints: "כללים מיוחדים להסבר",
+        outTitle: "הפרומפט המוכן ל-AI",
+        lblPromptLang: "שפת הפרומפט:",
+        optLangAuto: "לפי שפת הממשק",
+        editableHint: "✏️ ניתן לעריכה ידנית",
+        btnCopy: "העתק פרומפט",
+        btnCopied: "הועתק!",
+        btnRandom: "דוגמה",
+        btnReset: "איפוס",
+        tipText: "טיפ: הדביקו את הפרומפט ב-ChatGPT, Gemini או Claude. אם בחרתם בפורמט 'אודיו / פודקאסט', מומלץ להפעיל את מצב השיחה הקולית של ה-AI!",
+        charsLabel: "תווים",
+
+        roles: {
+          school: "תלמיד/ת בית ספר",
+          university: "סטודנט/ית באוניברסיטה או מכללה",
+          self: "למידה עצמאית / מבוגר"
+        },
+        grades: {
+          g1_4: "כיתות א׳–ד׳ (בית ספר יסודי)",
+          g5_7: "כיתות ה׳–ז׳ (יסודי / חטיבת ביניים)",
+          g8_9: "כיתות ח׳–ט׳ (חטיבת ביניים)",
+          g10: "כיתה י׳ (תיכון)",
+          g11_12: "כיתות י״א–י״ב (הכנה לבגרות)",
+          uni_1_2: "שנה א׳–ב׳ באקדמיה (תואר ראשון)",
+          uni_adv: "שנים מתקדמות / תואר שני",
+          general: "כללי (ללא שיוך לכיתה)"
+        },
+        subjects: {
+          math: "מתמטיקה (אלגברה / גיאומטריה / חדו״א)",
+          physics: "פיזיקה",
+          chemistry: "כימיה",
+          biology: "ביולוגיה",
+          cs: "מדעי המחשב ותכנות",
+          history: "היסטוריה",
+          literature: "ספרות",
+          languages: "שפות זרות",
+          economics: "כלכלה ואזרחות",
+          other: "מקצוע אחר (לפי הנושא)"
+        },
+        knowledge: {
+          zero: "מאפס מוחלט (מתחיל/ה, נושא חדש לגמרי)",
+          gaps: "בסיסי (יש פערים ובלבול בחומר)",
+          confident: "בינוני / טוב (שולט/ת בבסיס, רוצה להעמיק)",
+          advanced: "מתקדם / רמת אולימפיאדה"
+        },
+        goals: {
+          understand: "להבין נושא חדש במילים פשוטות וברורות",
+          homework: "עזרה בשיעורי בית (בלי לקבל רק תשובות מוכנות)",
+          exam: "הכנה למבחן, מתכונת או בחינת בגרות",
+          mastery: "הבנה תיאורטית מעמיקה וחיבור בין מושגים"
+        },
+        formats: [
+          {
+            id: "text",
+            icon: "📄",
+            title: "טקסט מובנה ודוגמאות",
+            desc: "כותרות מסודרות, נקודות מפתח, נוסחאות ודוגמאות פתורות"
+          },
+          {
+            id: "audio",
+            icon: "🎧",
+            title: "פורמט אודיו / פודקאסט",
+            desc: "הסבר קולח בסגנון שיחה, מותאם להאזנה ולהקראה קולית"
+          },
+          {
+            id: "video",
+            icon: "🎬",
+            title: "תסריט וידאו / דימויים חזותיים",
+            desc: "אנלוגיות ויזואליות, תרשימי טקסט ותיאור סצנות להמחשה"
+          },
+          {
+            id: "interactive",
+            icon: "💬",
+            title: "מורה פרטי אינטראקטיבי",
+            desc: "מלמד בצעדים קטנים ושואל שאלות כדי לוודא הבנה"
+          }
+        ],
+        tones: {
+          friendly: "מנטור ידידותי, מעודד וסבלני",
+          academic: "אקדמי, מדויק ומקצועי",
+          metaphor: "עם הומור, מטאפורות ודוגמאות מחיי היום-יום",
+          socratic: "השיטה הסוקרטית (מוביל לתשובה בעזרת שאלות מנחות)"
+        },
+        practices: [
+          { id: "tasks", label: "3 תרגילים ברמת קושי עולה עם פתרונות מוסתרים" },
+          { id: "quiz", label: "בוחן קצר של 5 שאלות לבדיקה עצמית בסוף" },
+          { id: "cheatsheet", label: "דף נוסחאות / סיכום מרוכז (Cheat-Sheet)" }
+        ],
+        constraints: [
+          { id: "no_jargon", label: "להימנע מז׳רגון מסובך (להסביר כל מושג חדש בפשטות)" },
+          { id: "step_by_step", label: "להסביר שלב אחר שלב בלי לדלג על מעברים אלגבריים או לוגיים" },
+          { id: "real_world", label: "להראות היכן הנושא בא לידי ביטוי בעולם האמיתי" }
+        ],
+
+        promptBuilder: {
+          roleIntro: (role, grade, subject) =>
+            `פעל כמורה פרטי מומחה, סבלני ומנוסה בתחום ${subject}. הלומד/ת שלך הוא/היא ${role} (${grade}).`,
+          topicLine: (topic) =>
+            topic ? `המיקוד הספציפי של השיעור הוא הנושא: "${topic}".` : `בחר נושא יסוד מרכזי במקצוע זה המתאים לרמת הלומד והעבר עליו שיעור מובנה.`,
+          levelAndGoal: (knowledge, goal) =>
+            `\nפרופיל הלומד ומטרת השיעור:\n• רמת ידע נוכחית: ${knowledge}.\n• מטרה עיקרית: ${goal}.`,
+          formatInstructions: {
+            text: `\nפורמט ההסבר (טקסט מובנה):\n• ארגן את התשובה כסיכום ברור ומסודר עם כותרות ורשימות תבליטים.\n• הדגש הגדרות וכללים חשובים.\n• הצג 2–3 דוגמאות פתורות מהקל אל הכבד.`,
+            audio: `\nפורמט ההסבר (אודיו / פודקאסט להאזנה):\n• כתוב את ההסבר כתסריט פודקאסט חי, טבעי וקולח המיועד לשמיעה ולא לקריאה.\n• אל תשתמש בטבלאות, סימנים גרפיים מורכבים או הפניות חזותיות ("כפי שרואים למטה").\n• השתמש במעברים טבעיים בדיבור ובטא נוסחאות במילים ברורות כך שההסבר יישמע מצוין בהקראה קולית (TTS).`,
+            video: `\nפורמט ההסבר (תסריט וידאו והמחשה חזותית):\n• בנה את ההסבר כתסריט לסרטון לימודי חזותי (בסגנון Khan Academy או Kurzgesagt).\n• תאר סצנות ויזואליות ודימויים מנטליים [בתוך סוגריים מרובעים], וצייר תרשימי טקסט פשוטים.\n• השתמש באנלוגיות חזותיות חיות כדי שהלומד יוכל ממש "לראות" בדמיון איך הרעיון עובד.`,
+            interactive: `\nפורמט ההסבר (מורה פרטי אינטראקטיבי שלב-אחר-שלב):\n• אל תציג את כל ההרצאה בבת אחת!\n• חלק את הנושא לצעדים קצרים. הסבר רק את שלב 1 (עד 2–3 פסקאות קצרות), ולאחר מכן שאל אותי שאלת הבנה אחת או תרגיל קצר.\n• המתן לתשובה שלי, תן משוב, ורק אז עבור לשלב הבא.`
+          },
+          toneInstruction: (tone) => `\nסגנון וטון ההוראה:\n• אמצו את הסגנון הבא: ${tone}.`,
+          practiceHeader: `\nתרגול וחיזוק ההבנה:`,
+          practiceMap: {
+            tasks: `• בסיום ההסבר, הצג 3 שאלות תרגול ברמת קושי עולה. הסתר את הפתרונות המלאים מתחת לקו הפרדה ברור "--- פתרונות ---" כדי שאוכל לנסות לפתור לבד קודם.`,
+            quiz: `• הוסף בסוף בוחן קצר של 5 שאלות אמריקאיות לבדיקה עצמית, עם מפתח תשובות והסבר קצר מתחתיו.`,
+            cheatsheet: `• צור "דף סיכום מרוכז" (Cheat-Sheet) הכולל כללי מפתח, נוסחאות וטעויות נפוצות שכדאי להימנע מהן.`
+          },
+          constraintsHeader: `\nכללים מחייבים:`,
+          constraintsMap: {
+            no_jargon: `• הימנע מז׳רגון אקדמי כבד. בכל פעם שמופיע מושג מקצועי חדש, תרגם אותו מיד לשפה יומיומית פשוטה.`,
+            step_by_step: `• הסבר ביסודיות ובפירוט: לעולם אל תדלג על שלבי ביניים לוגיים או חישובים אלגבריים.`,
+            real_world: `• שלב 1–2 דוגמאות מוחשיות המראות כיצד הידע הזה משמש בעולם האמיתי, בטכנולוגיה או בטבע.`
+          },
+          closing: `\nהתחל את השיעור כעת.`
+        }
+      }
+    };
+
+    /* ==========================================================================
+       2. APPLICATION STATE
+       ========================================================================== */
+    const state = {
+      uiLang: "ru",
+      role: "school",
+      grade: "g10",
+      subject: "math",
+      topic: "",
+      knowledge: "gaps",
+      goal: "understand",
+      format: "text",
+      tone: "friendly",
+      practices: ["tasks", "cheatsheet"],
+      constraints: ["step_by_step", "real_world"]
+    };
+
+    /* ==========================================================================
+       3. UI RENDERING & DYNAMIC TRANSLATION
+       ========================================================================== */
+    function setUILanguage(lang) {
+      state.uiLang = lang;
+      const dict = I18N[lang];
+
+      // Set HTML lang & RTL/LTR direction
+      document.documentElement.lang = lang;
+      document.documentElement.dir = dict.dir;
+
+      // Update active button state
+      document.querySelectorAll(".lang-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
+
+      // Translate static labels
+      document.getElementById("ui-app-title").textContent = dict.appTitle;
+      document.getElementById("ui-app-subtitle").textContent = dict.appSubtitle;
+      document.getElementById("ui-sec-1").textContent = dict.sec1;
+      document.getElementById("ui-lbl-role").textContent = dict.lblRole;
+      document.getElementById("ui-lbl-grade").textContent = dict.lblGrade;
+      document.getElementById("ui-lbl-subject").textContent = dict.lblSubject;
+      document.getElementById("ui-lbl-topic").textContent = dict.lblTopic;
+      document.getElementById("ui-hint-topic").textContent = dict.hintTopic;
+      document.getElementById("topic-input").placeholder = dict.topicPlaceholder;
+      document.getElementById("ui-sec-2").textContent = dict.sec2;
+      document.getElementById("ui-lbl-knowledge").textContent = dict.lblKnowledge;
+      document.getElementById("ui-lbl-goal").textContent = dict.lblGoal;
+      document.getElementById("ui-sec-3").textContent = dict.sec3;
+      document.getElementById("ui-sec-4").textContent = dict.sec4;
+      document.getElementById("ui-lbl-tone").textContent = dict.lblTone;
+      document.getElementById("ui-lbl-practice").textContent = dict.lblPractice;
+      document.getElementById("ui-lbl-constraints").textContent = dict.lblConstraints;
+      document.getElementById("ui-out-title").textContent = dict.outTitle;
+      document.getElementById("ui-lbl-prompt-lang").textContent = dict.lblPromptLang;
+      document.getElementById("opt-lang-auto").textContent = dict.optLangAuto;
+      document.getElementById("ui-editable-hint").textContent = dict.editableHint;
+      document.getElementById("ui-btn-copy").textContent = dict.btnCopy;
+      document.getElementById("ui-btn-random").textContent = dict.btnRandom;
+      document.getElementById("ui-btn-reset").textContent = dict.btnReset;
+      document.getElementById("ui-tip-text").textContent = dict.tipText;
+
+      // Populate dynamic controls preserving selected values
+      populateSelect("role-select", dict.roles, state.role);
+      populateSelect("grade-select", dict.grades, state.grade);
+      populateSelect("subject-select", dict.subjects, state.subject);
+      populateSelect("knowledge-select", dict.knowledge, state.knowledge);
+      populateSelect("goal-select", dict.goals, state.goal);
+      populateSelect("tone-select", dict.tones, state.tone);
+
+      renderFormatCards(dict.formats);
+      renderCheckboxes("practice-checks-container", dict.practices, state.practices, "practices");
+      renderCheckboxes("constraint-checks-container", dict.constraints, state.constraints, "constraints");
+
+      generatePrompt();
+    }
+
+    function populateSelect(elementId, optionsMap, currentValue) {
+      const select = document.getElementById(elementId);
+      select.innerHTML = "";
+      Object.entries(optionsMap).forEach(([key, label]) => {
+        const opt = document.createElement("option");
+        opt.value = key;
+        opt.textContent = label;
+        if (key === currentValue) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function renderFormatCards(formatsList) {
+      const container = document.getElementById("format-cards-container");
+      container.innerHTML = "";
+      formatsList.forEach(fmt => {
+        const card = document.createElement("div");
+        card.className = "choice-card" + (state.format === fmt.id ? " selected" : "");
+        card.onclick = () => {
+          state.format = fmt.id;
+          renderFormatCards(I18N[state.uiLang].formats);
+          generatePrompt();
+        };
+        card.innerHTML = `
+          <span class="choice-icon">${fmt.icon}</span>
+          <div class="choice-content">
+            <span class="choice-title">${fmt.title}</span>
+            <span class="choice-desc">${fmt.desc}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderCheckboxes(containerId, itemsList, selectedArray, stateKey) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = "";
+      itemsList.forEach(item => {
+        const isChecked = selectedArray.includes(item.id);
+        const label = document.createElement("label");
+        label.className = "check-item" + (isChecked ? " checked" : "");
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = isChecked;
+        checkbox.onchange = () => {
+          if (checkbox.checked) {
+            if (!state[stateKey].includes(item.id)) state[stateKey].push(item.id);
+          } else {
+            state[stateKey] = state[stateKey].filter(id => id !== item.id);
+          }
+          label.classList.toggle("checked", checkbox.checked);
+          generatePrompt();
+        };
+
+        const span = document.createElement("span");
+        span.textContent = item.label;
+
+        label.appendChild(checkbox);
+        label.appendChild(span);
+        container.appendChild(label);
+      });
+    }
+
+    function handleRoleChange() {
+      const roleVal = document.getElementById("role-select").value;
+      state.role = roleVal;
+      // Smart grade suggestion when switching learner role
+      if (roleVal === "university" && !state.grade.startsWith("uni")) {
+        state.grade = "uni_1_2";
+        document.getElementById("grade-select").value = "uni_1_2";
+      } else if (roleVal === "school" && (state.grade.startsWith("uni") || state.grade === "general")) {
+        state.grade = "g10";
+        document.getElementById("grade-select").value = "g10";
+      } else if (roleVal === "self") {
+        state.grade = "general";
+        document.getElementById("grade-select").value = "general";
+      }
+      generatePrompt();
+    }
+
+    /* ==========================================================================
+       4. PROMPT GENERATION ENGINE
+       ========================================================================== */
+    function generatePrompt() {
+      // Sync state from DOM selects/inputs
+      state.role = document.getElementById("role-select").value;
+      state.grade = document.getElementById("grade-select").value;
+      state.subject = document.getElementById("subject-select").value;
+      state.topic = document.getElementById("topic-input").value.trim();
+      state.knowledge = document.getElementById("knowledge-select").value;
+      state.goal = document.getElementById("goal-select").value;
+      state.tone = document.getElementById("tone-select").value;
+
+      // Determine target language for the generated prompt
+      const promptLangChoice = document.getElementById("prompt-lang-select").value;
+      const targetLang = promptLangChoice === "auto" ? state.uiLang : promptLangChoice;
+      const t = I18N[targetLang];
+      const pb = t.promptBuilder;
+
+      const roleText = t.roles[state.role];
+      const gradeText = t.grades[state.grade];
+      const subjectText = t.subjects[state.subject];
+      const knowledgeText = t.knowledge[state.knowledge];
+      const goalText = t.goals[state.goal];
+      const toneText = t.tones[state.tone];
+
+      let parts = [];
+      parts.push(pb.roleIntro(roleText, gradeText, subjectText));
+      parts.push(pb.topicLine(state.topic));
+      parts.push(pb.levelAndGoal(knowledgeText, goalText));
+      parts.push(pb.formatInstructions[state.format]);
+      parts.push(pb.toneInstruction(toneText));
+
+      if (state.practices.length > 0) {
+        parts.push(pb.practiceHeader);
+        state.practices.forEach(pId => {
+          if (pb.practiceMap[pId]) parts.push(pb.practiceMap[pId]);
+        });
+      }
+
+      if (state.constraints.length > 0) {
+        parts.push(pb.constraintsHeader);
+        state.constraints.forEach(cId => {
+          if (pb.constraintsMap[cId]) parts.push(pb.constraintsMap[cId]);
+        });
+      }
+
+      parts.push(pb.closing);
+
+      const textarea = document.getElementById("prompt-output");
+      textarea.dir = t.dir;
+      textarea.value = parts.join("\n");
+      updateCharCount();
+    }
+
+    function updateCharCount() {
+      const len = document.getElementById("prompt-output").value.length;
+      const label = I18N[state.uiLang].charsLabel;
+      document.getElementById("char-counter").textContent = `${len} ${label}`;
+    }
+
+    /* ==========================================================================
+       5. ACTIONS: COPY, RANDOM EXAMPLE, RESET
+       ========================================================================== */
+    function copyPrompt() {
+      const textarea = document.getElementById("prompt-output");
+      textarea.select();
+      textarea.setSelectionRange(0, 99999);
+      try {
+        document.execCommand("copy");
+      } catch (e) {
+        if (navigator.clipboard) navigator.clipboard.writeText(textarea.value);
+      }
+
+      const btn = document.getElementById("copy-btn");
+      const labelSpan = document.getElementById("ui-btn-copy");
+      const dict = I18N[state.uiLang];
+
+      btn.classList.add("copied");
+      labelSpan.textContent = dict.btnCopied;
+
+      setTimeout(() => {
+        btn.classList.remove("copied");
+        labelSpan.textContent = dict.btnCopy;
+      }, 2000);
+    }
+
+    function applyRandomExample() {
+      const topicsByLang = {
+        ru: [
+          { role: "school", grade: "g10", subject: "math", topic: "Логарифмы и их свойства", knowledge: "gaps", goal: "understand", format: "interactive", tone: "metaphor" },
+          { role: "school", grade: "g11_12", subject: "physics", topic: "Закон сохранения импульса", knowledge: "confident", goal: "exam", format: "video", tone: "friendly" },
+          { role: "university", grade: "uni_1_2", subject: "cs", topic: "Рекурсия и динамическое программирование", knowledge: "zero", goal: "understand", format: "text", tone: "academic" },
+          { role: "self", grade: "general", subject: "history", topic: "Причины начала Первой мировой войны", knowledge: "gaps", goal: "mastery", format: "audio", tone: "friendly" }
+        ],
+        en: [
+          { role: "school", grade: "g10", subject: "math", topic: "Quadratic Equations & Discriminant", knowledge: "gaps", goal: "understand", format: "interactive", tone: "metaphor" },
+          { role: "school", grade: "g11_12", subject: "physics", topic: "Electromagnetic Induction", knowledge: "confident", goal: "exam", format: "video", tone: "friendly" },
+          { role: "university", grade: "uni_1_2", subject: "cs", topic: "Big-O Notation & Recursion", knowledge: "zero", goal: "understand", format: "text", tone: "academic" },
+          { role: "self", grade: "general", subject: "economics", topic: "Inflation and Central Bank Interest Rates", knowledge: "gaps", goal: "mastery", format: "audio", tone: "friendly" }
+        ],
+        he: [
+          { role: "school", grade: "g10", subject: "math", topic: "פונקציה ריבועית ופרבולה", knowledge: "gaps", goal: "understand", format: "interactive", tone: "metaphor" },
+          { role: "school", grade: "g11_12", subject: "physics", topic: "חוק שימור התנע והתנגשויות", knowledge: "confident", goal: "exam", format: "video", tone: "friendly" },
+          { role: "university", grade: "uni_1_2", subject: "cs", topic: "רקורסיה וסיבוכיות זמן ריצה", knowledge: "zero", goal: "understand", format: "text", tone: "academic" },
+          { role: "self", grade: "general", subject: "history", topic: "המהפכה התעשייתית והשפעותיה", knowledge: "gaps", goal: "mastery", format: "audio", tone: "friendly" }
+        ]
+      };
+
+      const pool = topicsByLang[state.uiLang];
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+
+      state.role = pick.role;
+      state.grade = pick.grade;
+      state.subject = pick.subject;
+      state.topic = pick.topic;
+      state.knowledge = pick.knowledge;
+      state.goal = pick.goal;
+      state.format = pick.format;
+      state.tone = pick.tone;
+
+      document.getElementById("topic-input").value = state.topic;
+      setUILanguage(state.uiLang);
+    }
+
+    function resetForm() {
+      state.role = "school";
+      state.grade = "g10";
+      state.subject = "math";
+      state.topic = "";
+      state.knowledge = "gaps";
+      state.goal = "understand";
+      state.format = "text";
+      state.tone = "friendly";
+      state.practices = ["tasks", "cheatsheet"];
+      state.constraints = ["step_by_step", "real_world"];
+
+      document.getElementById("topic-input").value = "";
+      document.getElementById("prompt-lang-select").value = "auto";
+      setUILanguage(state.uiLang);
+    }
+
+    /* ==========================================================================
+       6. INITIALIZATION
+       ========================================================================== */
+    window.addEventListener("DOMContentLoaded", () => {
+      setUILanguage("ru");
+    });
+  </script>
+</body>
+</html>
